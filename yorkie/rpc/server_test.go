@@ -19,7 +19,7 @@ import (
 
 const (
 	nilClientID = "000000000000000000000000"
-	testRPCPort = testhelper.RPCPort + 1
+	testRPCPort = testhelper.RPCPort + 100
 )
 
 var testRPCServer *rpc.Server

@@ -260,6 +260,36 @@ func (c *Client) Sync(ctx context.Context, keys ...*key.Key) error {
 	return nil
 }
 
+// Sync pushes local changes of the attached documents to the Agent and
+// receives changes of the remote replica from the agent then apply them to
+// local documents.
+func (c *Client) SyncGoroutine(ctx context.Context, keys ...*key.Key) error {
+	if len(keys) == 0 {
+		for _, doc := range c.attachedDocs {
+			keys = append(keys, doc.Key())
+		}
+	}
+
+	errChan := make(chan error)
+	for _, k := range keys {
+		go c.syncGoroutine(ctx, k, errChan)
+	}
+
+	routineCnt := 0
+	for err := range errChan {
+		if err != nil {
+			return err
+		}
+		routineCnt++
+
+		if routineCnt == len(keys) {
+			break
+		}
+	}
+
+	return nil
+}
+
 // WatchResponse is a structure representing response of Watch.
 type WatchResponse struct {
 	EventType types.EventType
@@ -359,4 +389,36 @@ func (c *Client) sync(ctx context.Context, key *key.Key) error {
 	}
 
 	return nil
+}
+
+func (c *Client) syncGoroutine(ctx context.Context, key *key.Key, errChan chan<- error) {
+	if c.status != activated {
+		errChan <- ErrClientNotActivated
+	}
+
+	doc, ok := c.attachedDocs[key.BSONKey()]
+	if !ok {
+		errChan <- ErrDocumentNotAttached
+	}
+
+	res, err := c.client.PushPull(ctx, &api.PushPullRequest{
+		ClientId:   c.id.String(),
+		ChangePack: converter.ToChangePack(doc.CreateChangePack()),
+	})
+	if err != nil {
+		log.Logger.Error(err)
+		errChan <- err
+	}
+
+	pack, err := converter.FromChangePack(res.ChangePack)
+	if err != nil {
+		errChan <- err
+	}
+
+	if err := doc.ApplyChangePack(pack); err != nil {
+		log.Logger.Error(err)
+		errChan <- err
+	}
+
+	errChan <- nil
 }

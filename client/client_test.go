@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -878,6 +879,47 @@ func TestClientAndDocument(t *testing.T) {
 		})
 
 		syncClientsThenAssertEqual(t, []clientAndDocPair{{c1, d1}, {c2, d2}})
+	})
+
+	t.Run("Synchronous and asynchronous performance comparison of Sync method test", func(t *testing.T) {
+		ctx := context.Background()
+
+		updater := func(doc *document.Document) {
+			err := doc.Update(func(root *proxy.ObjectProxy) error {
+				root.SetNewObject("k1")
+				return nil
+			})
+			assert.NoError(t, err)
+		}
+
+		// Async
+		d1 := document.New(testhelper.Collection, t.Name())
+		err := c1.Attach(ctx, d1)
+		assert.NoError(t, err)
+		updater(d1)
+
+		for i := 0; i < 10; i++ {
+			doc := document.New(testhelper.Collection+strconv.Itoa(i), t.Name())
+			err = c1.Attach(ctx, doc)
+			assert.NoError(t, err)
+			updater(doc)
+		}
+
+		start := time.Now().Nanosecond()
+		err = c1.SyncGoroutine(ctx)
+		assert.NoError(t, err)
+		end := time.Now().Nanosecond()
+
+		t.Logf("Async : %d nanosecond", (end - start))
+		assert.NoError(t, err)
+
+		// Sync
+		start = time.Now().Nanosecond()
+		err = c1.Sync(ctx)
+		assert.NoError(t, err)
+		end = time.Now().Nanosecond()
+		t.Logf("Sync : %d nanosecond", (end - start))
+		assert.Equal(t, true, false)
 	})
 }
 
