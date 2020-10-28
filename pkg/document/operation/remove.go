@@ -17,6 +17,8 @@
 package operation
 
 import (
+	"fmt"
+
 	"github.com/yorkie-team/yorkie/pkg/document/json"
 	"github.com/yorkie-team/yorkie/pkg/document/time"
 )
@@ -46,6 +48,8 @@ func (o *Remove) Execute(root *json.Root) error {
 	case *json.Object:
 		elem := parent.DeleteByCreatedAt(o.createdAt, o.executedAt)
 		root.RegisterRemovedElementPair(parent, elem)
+		fmt.Printf("[remove.Execute.parent] %p | %s\n", parent, parent.Marshal())
+		fmt.Printf("[remove.Execute.elem] %p | %s\n", elem, elem.Marshal())
 	case *json.Array:
 		elem := parent.DeleteByCreatedAt(o.createdAt, o.executedAt)
 		root.RegisterRemovedElementPair(parent, elem)

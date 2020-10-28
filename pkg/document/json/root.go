@@ -17,6 +17,8 @@
 package json
 
 import (
+	"fmt"
+
 	"github.com/yorkie-team/yorkie/pkg/document/time"
 )
 
@@ -96,6 +98,8 @@ func (r *Root) GarbageCollect(ticket *time.Ticket) int {
 
 	for _, pair := range r.removedElementPairMapByCreatedAt {
 		if pair.elem.RemovedAt() != nil && ticket.Compare(pair.elem.RemovedAt()) >= 0 {
+			fmt.Printf("[root.GarbageCollect.parent] %p | %s\n", pair.parent, pair.parent.Marshal())
+			fmt.Printf("[root.GarbageCollect.elem] %p | %s\n", pair.elem, pair.elem.Marshal())
 			pair.parent.Purge(pair.elem)
 			count += r.garbageCollect(pair.elem)
 		}
@@ -110,7 +114,6 @@ func (r *Root) GarbageLen() int {
 
 	for _, pair := range r.removedElementPairMapByCreatedAt {
 		count++
-
 		switch elem := pair.elem.(type) {
 		case Container:
 			elem.Descendants(func(elem Element, parent Container) bool {

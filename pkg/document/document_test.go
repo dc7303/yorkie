@@ -126,6 +126,14 @@ func TestDocument(t *testing.T) {
 
 		assert.Equal(t, 4, doc.GarbageCollect(time.MaxTicket))
 		assert.Equal(t, 0, doc.GarbageLen())
+		fmt.Println("-------- delete array and garbage collect ---------")
+
+		err = doc.Update(func(root *proxy.ObjectProxy) error {
+			arr := root.GetArray("2")
+			fmt.Printf("[Test.arr] %p | %s \n", arr, arr.Marshal())
+			root.Delete("1")
+			return nil
+		}, "deletes 2")
 	})
 
 	t.Run("garbage collection test 2", func(t *testing.T) {

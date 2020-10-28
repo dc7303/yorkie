@@ -17,6 +17,7 @@
 package proxy
 
 import (
+	"fmt"
 	time2 "time"
 
 	"github.com/yorkie-team/yorkie/pkg/document/change"
@@ -174,6 +175,7 @@ func (p *ObjectProxy) GetObject(k string) *ObjectProxy {
 }
 
 func (p *ObjectProxy) GetArray(k string) *ArrayProxy {
+	fmt.Printf("[object_proxy.GetArray.Object] %p | %s\n", p.Object, p.Object.Marshal())
 	elem := p.Object.Get(k)
 	if elem == nil {
 		return nil

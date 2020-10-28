@@ -81,9 +81,9 @@ func (rht *RHTPriorityQueueMap) Get(key string) Element {
 	}
 
 	node := queue.Peek().(*RHTPQMapNode)
-	if node.isRemoved() {
-		return nil
-	}
+	//if node.isRemoved() {
+	//	return nil
+	//}
 	return node.elem
 }
 
@@ -141,9 +141,11 @@ func (rht *RHTPriorityQueueMap) Elements() map[string]Element {
 		if queue.Len() == 0 {
 			continue
 		}
-		if node := queue.Peek().(*RHTPQMapNode); !node.isRemoved() {
-			members[node.key] = node.elem
-		}
+		//if node := queue.Peek().(*RHTPQMapNode); !node.isRemoved() {
+		//	members[node.key] = node.elem
+		//}
+		node := queue.Peek().(*RHTPQMapNode)
+		members[node.key] = node.elem
 	}
 
 	return members
